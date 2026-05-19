@@ -1,0 +1,65 @@
+const Database = require('better-sqlite3');
+const path = require('path');
+const { DATA_DIR } = require('./config');
+
+const db = new Database(path.join(DATA_DIR, 'tournament.db'));
+
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS players (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    nickname TEXT,
+    bio TEXT,
+    handicap REAL DEFAULT 0,
+    avatar_url TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS tournaments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    year INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    course TEXT,
+    location TEXT,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS scores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    gross_score INTEGER,
+    net_score INTEGER,
+    holes_played INTEGER DEFAULT 18,
+    notes TEXT,
+    FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+    UNIQUE(tournament_id, player_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS awards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    award_name TEXT NOT NULL,
+    description TEXT,
+    FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS photos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id INTEGER,
+    caption TEXT,
+    filename TEXT NOT NULL,
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE SET NULL
+  );
+`);
+
+module.exports = db;
