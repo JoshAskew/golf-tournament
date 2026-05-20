@@ -356,7 +356,7 @@ function ScoreModal({ tournamentId, players, existing, onClose, onSave }) {
 }
 
 function AwardModal({ tournamentId, players, onClose, onSave }) {
-  const presets = ['Tournament Champion', 'Longest Drive', 'Closest to the Pin', 'Most Pars', 'Best Comeback', 'Worst Shot of the Day', 'Most Improved', 'Spirit Award', 'Greenside Wizard', 'Custom Award'];
+  const presets = ['Tournament Champion', 'Longest Drive', 'Longest Putt', 'Closest to the Pin', 'Most Pars', 'Best Comeback', 'Worst Shot of the Day', 'Most Improved', 'Spirit Award', 'Greenside Wizard', 'Custom Award'];
   const [form, setForm] = useState({ player_id: players[0]?.id || '', award_name: presets[0], description: '' });
   const [saving, setSaving] = useState(false);
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
