@@ -18,6 +18,7 @@ app.use('/api/photos', require('./routes/photos'));
 app.use('/api/awards', require('./routes/awards'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/proposals', require('./routes/proposals'));
+app.use('/api/teams', require('./routes/teams'));
 
 // Serve the React build in production
 if (isProd) {

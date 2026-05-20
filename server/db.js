@@ -52,6 +52,30 @@ db.exec(`
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS teams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS team_members (
+    team_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    PRIMARY KEY (team_id, player_id),
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS team_scores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    team_id INTEGER NOT NULL UNIQUE,
+    gross_score INTEGER,
+    net_score INTEGER,
+    notes TEXT,
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS proposals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
