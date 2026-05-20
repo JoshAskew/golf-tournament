@@ -1,29 +1,40 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar';
+import PlanningSection from '../components/PlanningSection';
+
+const NAV_CARDS = [
+  { to: '/tournaments', icon: '⛳', label: 'Tournaments', desc: 'Scores & leaderboards', color: 'var(--green-mid)' },
+  { to: '/players',    icon: '👤', label: 'Players',     desc: 'Profiles & stats',       color: 'var(--green-dark)' },
+  { to: '/gallery',    icon: '📷', label: 'Gallery',     desc: 'Tournament photos',      color: '#1a6b8a' },
+  { to: '/history',    icon: '🏆', label: 'History',     desc: 'Records & hall of fame', color: '#8a5a1a' },
+];
 
 export default function Home() {
   const [tournaments, setTournaments] = useState([]);
   const [stats, setStats] = useState(null);
+  const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetch('/api/tournaments').then(r => r.json()),
       fetch('/api/stats').then(r => r.json()),
-    ]).then(([t, s]) => {
+      fetch('/api/photos').then(r => r.json()),
+    ]).then(([t, s, p]) => {
       setTournaments(t);
       setStats(s);
+      setPhotos(p.slice(0, 4));
       setLoading(false);
     });
   }, []);
 
   const latest = tournaments[0];
-
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div>
+      {/* ── Hero ── */}
       <div className="hero">
         <div className="hero-inner">
           <img
@@ -41,6 +52,18 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── Quick nav cards ── */}
+      <div className="nav-cards">
+        {NAV_CARDS.map(c => (
+          <Link key={c.to} to={c.to} className="nav-card" style={{ borderTopColor: c.color }}>
+            <div className="nav-card-icon">{c.icon}</div>
+            <div className="nav-card-title">{c.label}</div>
+            <div className="nav-card-desc">{c.desc}</div>
+          </Link>
+        ))}
+      </div>
+
+      {/* ── Stats bar ── */}
       <div className="stat-row">
         <div className="stat-chip">
           <div className="stat-chip-value">{tournaments.length}</div>
@@ -50,10 +73,12 @@ export default function Home() {
           <div className="stat-chip-value">{stats?.mostTournaments?.length ?? 0}</div>
           <div className="stat-chip-label">Players</div>
         </div>
-        <div className="stat-chip">
-          <div className="stat-chip-value">{stats?.mostWins?.[0]?.wins ?? 0}</div>
-          <div className="stat-chip-label">Most Wins</div>
-        </div>
+        {stats?.mostWins?.[0] && (
+          <div className="stat-chip">
+            <div className="stat-chip-value">{stats.mostWins[0].wins}</div>
+            <div className="stat-chip-label">Most Wins ({stats.mostWins[0].name.split(' ')[0]})</div>
+          </div>
+        )}
         {stats?.bestRounds?.[0] && (
           <div className="stat-chip">
             <div className="stat-chip-value">{stats.bestRounds[0].gross_score}</div>
@@ -62,107 +87,159 @@ export default function Home() {
         )}
       </div>
 
-      <div className="grid-2">
-        {/* Latest tournament leaderboard */}
-        {latest ? (
-          <div className="card">
-            <div className="card-header">
-              <div>
-                <div className="card-title">Latest: {latest.name}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginTop: 2 }}>
-                  {latest.course} &middot; {latest.year}
-                </div>
-              </div>
-              <Link to={`/tournaments/${latest.id}`} className="btn btn-outline btn-sm">View</Link>
-            </div>
-            {latest.players_count > 0 ? (
-              <LatestLeaderboard tournamentId={latest.id} />
-            ) : (
-              <div className="empty-state" style={{ padding: '32px' }}>
-                <div className="empty-state-icon">📋</div>
-                <div className="empty-state-text">No scores yet</div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="card">
-            <div className="card-body">
-              <div className="empty-state">
-                <div className="empty-state-icon">⛳</div>
-                <div className="empty-state-text">No tournaments yet — <Link to="/tournaments">add one</Link></div>
-              </div>
-            </div>
-          </div>
-        )}
+      {/* ── Main grid ── */}
+      <div className="grid-2" style={{ marginBottom: 24 }}>
 
-        {/* All-time winners */}
+        {/* Latest leaderboard */}
         <div className="card">
           <div className="card-header">
-            <div className="card-title">All-Time Winners</div>
-            <Link to="/history" className="btn btn-outline btn-sm">Full History</Link>
-          </div>
-          {stats?.mostWins?.length > 0 ? (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Player</th>
-                    <th>Wins</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.mostWins.map((p, i) => (
-                    <tr key={p.id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <Avatar src={p.avatar_url} name={p.name} size="sm" />
-                          <Link to={`/players/${p.id}`} style={{ fontWeight: 600, color: 'var(--green-dark)', textDecoration: 'none' }}>
-                            {p.name}
-                          </Link>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''}>
-                          {i === 0 ? '🏆 ' : ''}{p.wins}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div>
+              <div className="card-title">
+                {latest ? `Latest: ${latest.name}` : 'Latest Tournament'}
+              </div>
+              {latest && (
+                <div style={{ fontSize: '0.78rem', color: 'var(--gray-400)', marginTop: 2 }}>
+                  {latest.course} · {latest.year}
+                </div>
+              )}
             </div>
+            {latest && <Link to={`/tournaments/${latest.id}`} className="btn btn-outline btn-sm">View →</Link>}
+          </div>
+          {latest ? (
+            latest.players_count > 0 ? (
+              <LatestLeaderboard tournamentId={latest.id} />
+            ) : (
+              <div className="empty-state" style={{ padding: 32 }}>
+                <div className="empty-state-icon">📋</div>
+                <div className="empty-state-text">No scores entered yet</div>
+              </div>
+            )
           ) : (
-            <div className="empty-state" style={{ padding: '32px' }}>
-              <div className="empty-state-text">No winners recorded yet</div>
+            <div className="empty-state" style={{ padding: 32 }}>
+              <div className="empty-state-icon">⛳</div>
+              <div className="empty-state-text">
+                <Link to="/tournaments" style={{ color: 'var(--green-mid)' }}>Add your first tournament</Link> to get started
+              </div>
             </div>
           )}
         </div>
+
+        {/* Recent photos or champions */}
+        {photos.length > 0 ? (
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Recent Photos</div>
+              <Link to="/gallery" className="btn btn-outline btn-sm">View All →</Link>
+            </div>
+            <div className="card-body" style={{ paddingBottom: 16 }}>
+              <div className="photo-strip">
+                {photos.map(p => (
+                  <Link key={p.id} to="/gallery" className="photo-strip-item">
+                    <img src={`/uploads/${p.filename}`} alt={p.caption || 'Tournament photo'} loading="lazy" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">All-Time Winners</div>
+              <Link to="/history" className="btn btn-outline btn-sm">Full History →</Link>
+            </div>
+            {stats?.mostWins?.length > 0 ? (
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>Player</th><th>Wins</th></tr></thead>
+                  <tbody>
+                    {stats.mostWins.map((p, i) => (
+                      <tr key={p.id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Avatar src={p.avatar_url} name={p.name} size="sm" />
+                            <Link to={`/players/${p.id}`} style={{ fontWeight: 600, color: 'var(--green-dark)', textDecoration: 'none' }}>
+                              {p.name}
+                            </Link>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''}>
+                            {i === 0 ? '🏆 ' : ''}{p.wins}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty-state" style={{ padding: 32 }}>
+                <div className="empty-state-text">No results yet</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Yearly champions */}
+      {/* ── Planning / polls ── */}
+      <PlanningSection />
+
+      {/* ── Champions by year ── */}
       {stats?.yearlyWinners?.length > 0 && (
-        <div className="card" style={{ marginTop: 24 }}>
-          <div className="card-header">
-            <div className="card-title">Champions by Year</div>
-          </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Year</th><th>Tournament</th><th>Course</th><th>Champion</th><th>Score</th></tr>
-              </thead>
-              <tbody>
+        <div className="grid-2">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Champions by Year</div>
+              <Link to="/history" className="btn btn-outline btn-sm">Full History →</Link>
+            </div>
+            <div className="card-body" style={{ padding: '8px 20px 16px' }}>
+              <div className="champions-strip">
                 {stats.yearlyWinners.map(w => (
-                  <tr key={w.year}>
-                    <td><strong>{w.year}</strong></td>
-                    <td>{w.tournament_name}</td>
-                    <td>{w.course || '—'}</td>
-                    <td>🏆 {w.winner_name}{w.nickname ? ` "${w.nickname}"` : ''}</td>
-                    <td>{w.winning_score}</td>
-                  </tr>
+                  <div key={w.year} className="champion-row">
+                    <div className="champion-year">{w.year}</div>
+                    <div>🏆</div>
+                    <div className="champion-name">
+                      {w.winner_name}{w.nickname ? ` "${w.nickname}"` : ''}
+                    </div>
+                    <div className="champion-score">{w.winning_score}</div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </div>
           </div>
+
+          {/* All-time winners alongside champions if we have photos */}
+          {photos.length > 0 && stats?.mostWins?.length > 0 && (
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">All-Time Wins</div>
+              </div>
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>Player</th><th>Wins</th></tr></thead>
+                  <tbody>
+                    {stats.mostWins.map((p, i) => (
+                      <tr key={p.id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Avatar src={p.avatar_url} name={p.name} size="sm" />
+                            <Link to={`/players/${p.id}`} style={{ fontWeight: 600, color: 'var(--green-dark)', textDecoration: 'none' }}>
+                              {p.name}
+                            </Link>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''}>
+                            {i === 0 ? '🏆 ' : ''}{p.wins}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -185,11 +262,11 @@ function LatestLeaderboard({ tournamentId }) {
           <tr><th>#</th><th>Player</th><th>Gross</th><th>Net</th></tr>
         </thead>
         <tbody>
-          {data.leaderboard.slice(0, 5).map((s, i) => (
+          {data.leaderboard.slice(0, 6).map((s, i) => (
             <tr key={s.id}>
               <td>
                 <span className={i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''}>
-                  {i + 1}
+                  {i === 0 ? '🏆' : i + 1}
                 </span>
               </td>
               <td>

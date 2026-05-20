@@ -52,6 +52,32 @@ db.exec(`
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS proposals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    multi_select INTEGER DEFAULT 1,
+    status TEXT DEFAULT 'open',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS proposal_options (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    proposal_id INTEGER NOT NULL,
+    label TEXT NOT NULL,
+    sort_order INTEGER DEFAULT 0,
+    FOREIGN KEY (proposal_id) REFERENCES proposals(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    option_id INTEGER NOT NULL,
+    voter_name TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (option_id) REFERENCES proposal_options(id) ON DELETE CASCADE,
+    UNIQUE(option_id, voter_name)
+  );
+
   CREATE TABLE IF NOT EXISTS photos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tournament_id INTEGER,
