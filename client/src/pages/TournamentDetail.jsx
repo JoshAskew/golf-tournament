@@ -112,8 +112,10 @@ export default function TournamentDetail() {
                             </td>
                             <td>
                               <div style={{ fontWeight: 700, color: 'var(--green-dark)' }}>{team.name}</div>
-                              <div style={{ fontSize: '0.78rem', color: 'var(--gray-400)' }}>
-                                {team.members.map(m => m.nickname || m.name.split(' ')[0]).join(', ')}
+                              <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                                {team.members.map(m => (
+                                  <Avatar key={m.id} src={m.avatar_url} name={m.name} size="sm" />
+                                ))}
                               </div>
                             </td>
                             <td><strong style={{ fontSize: '1.05rem' }}>{team.gross_score ?? '—'}</strong></td>
