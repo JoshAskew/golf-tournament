@@ -18,11 +18,14 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 router.get('/', (req, res) => {
   const players = db.prepare(`
     SELECT p.*,
-      COUNT(DISTINCT s.tournament_id) AS tournaments_played,
+      COUNT(DISTINCT s.tournament_id) AS scored_tournaments,
+      COUNT(DISTINCT te.tournament_id) AS team_tournaments,
       MIN(s.gross_score) AS best_gross,
       ROUND(AVG(s.gross_score), 1) AS avg_gross
     FROM players p
     LEFT JOIN scores s ON s.player_id = p.id
+    LEFT JOIN team_members tm ON tm.player_id = p.id
+    LEFT JOIN teams te ON te.id = tm.team_id
     GROUP BY p.id
     ORDER BY p.name
   `).all();
@@ -41,6 +44,29 @@ router.get('/:id', (req, res) => {
     ORDER BY t.date DESC
   `).all(req.params.id);
 
+  const teamHistory = db.prepare(`
+    SELECT te.id AS team_id, te.name AS team_name,
+      t.id AS tournament_id, t.name AS tournament_name, t.year, t.course, t.date,
+      ts.gross_score AS team_gross, ts.net_score AS team_net
+    FROM team_members tm
+    JOIN teams te ON te.id = tm.team_id
+    JOIN tournaments t ON t.id = te.tournament_id
+    LEFT JOIN team_scores ts ON ts.team_id = te.id
+    WHERE tm.player_id = ?
+    ORDER BY t.date DESC
+  `).all(req.params.id);
+
+  // Teammates per team
+  teamHistory.forEach(th => {
+    th.teammates = db.prepare(`
+      SELECT p.id, p.name, p.nickname, p.avatar_url
+      FROM team_members tm
+      JOIN players p ON p.id = tm.player_id
+      WHERE tm.team_id = ? AND tm.player_id != ?
+      ORDER BY p.name
+    `).all(th.team_id, req.params.id);
+  });
+
   const awards = db.prepare(`
     SELECT a.*, t.name AS tournament_name, t.year
     FROM awards a
@@ -49,7 +75,7 @@ router.get('/:id', (req, res) => {
     ORDER BY t.date DESC
   `).all(req.params.id);
 
-  res.json({ ...player, scores, awards });
+  res.json({ ...player, scores, teamHistory, awards });
 });
 
 router.post('/', upload.single('avatar'), (req, res) => {
