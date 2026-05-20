@@ -14,6 +14,7 @@ export default function Home() {
   const [tournaments, setTournaments] = useState([]);
   const [stats, setStats] = useState(null);
   const [photos, setPhotos] = useState([]);
+  const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,10 +22,12 @@ export default function Home() {
       fetch('/api/tournaments').then(r => r.json()),
       fetch('/api/stats').then(r => r.json()),
       fetch('/api/photos').then(r => r.json()),
-    ]).then(([t, s, p]) => {
+      fetch('/api/players').then(r => r.json()),
+    ]).then(([t, s, p, pl]) => {
       setTournaments(t);
       setStats(s);
       setPhotos(p.slice(0, 4));
+      setPlayers(pl);
       setLoading(false);
     });
   }, []);
@@ -70,7 +73,7 @@ export default function Home() {
           <div className="stat-chip-label">Tournaments</div>
         </div>
         <div className="stat-chip">
-          <div className="stat-chip-value">{stats?.mostTournaments?.length ?? 0}</div>
+          <div className="stat-chip-value">{players.length}</div>
           <div className="stat-chip-label">Players</div>
         </div>
         {stats?.mostWins?.[0] && (
