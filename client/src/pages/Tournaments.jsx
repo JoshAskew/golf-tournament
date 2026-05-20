@@ -31,17 +31,15 @@ export default function Tournaments() {
           {tournaments.map(t => (
             <Link key={t.id} to={`/tournaments/${t.id}`} style={{ textDecoration: 'none' }}>
               <div className="card" style={{ padding: '0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '18px 24px', borderLeft: '4px solid var(--green-mid)' }}>
-                  <div style={{ textAlign: 'center', minWidth: 56 }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--green-dark)', lineHeight: 1 }}>{t.year}</div>
-                  </div>
-                  <div style={{ flex: 1 }}>
+                <div className="tournament-row">
+                  <div className="tournament-row-year">{t.year}</div>
+                  <div className="tournament-row-info">
                     <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--green-dark)' }}>{t.name}</div>
                     <div style={{ color: 'var(--gray-400)', fontSize: '0.85rem', marginTop: 2 }}>
                       {t.course}{t.location ? ` — ${t.location}` : ''} &middot; {new Date(t.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 16, textAlign: 'right', flexShrink: 0 }}>
+                  <div className="tournament-row-stats">
                     {t.players_count > 0 && (
                       <div>
                         <div style={{ fontWeight: 700, color: 'var(--green-dark)' }}>{t.players_count}</div>
