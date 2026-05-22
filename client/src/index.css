@@ -273,7 +273,7 @@ tbody tr:hover { background: var(--gray-100); }
   background-size: cover;
   background-position: center;
   color: var(--white);
-  border-radius: 0;
+  border-radius: 18px;
   margin: -24px -24px 28px -24px;
   position: relative;
   overflow: hidden;
@@ -623,7 +623,7 @@ tbody tr:hover { background: var(--gray-100); }
   .mobile-menu { display: flex; top: 58px; }
 
   /* Hero */
-  .hero { margin: -16px -16px 20px -16px; min-height: 200px; }
+  .hero { margin: -16px -16px 20px -16px; min-height: 200px; border-radius: 14px; }
   .main-content { padding: 16px 16px 32px; }
   .hero-inner { padding: 32px 20px; }
   .hero-logo { height: 72px; width: 72px; margin-bottom: 6px; }
