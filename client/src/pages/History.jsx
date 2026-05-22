@@ -75,14 +75,29 @@ export default function History() {
           ) : (
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Score</th><th>Player</th><th>Tournament</th><th>Year</th></tr></thead>
+                <thead><tr><th>Score</th><th>Player &amp; Tournament</th></tr></thead>
                 <tbody>
                   {stats.bestRounds.map((r, i) => (
                     <tr key={i}>
-                      <td><strong style={{ color: i === 0 ? 'var(--gold)' : 'var(--green-dark)' }}>{r.gross_score}</strong></td>
-                      <td>{r.player_name}{r.nickname ? ` "${r.nickname}"` : ''}</td>
-                      <td>{r.tournament_name}</td>
-                      <td>{r.year}</td>
+                      <td style={{ width: 64, textAlign: 'center' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          fontWeight: 900,
+                          fontSize: '1.1rem',
+                          color: i === 0 ? 'var(--gold)' : 'var(--green-dark)',
+                        }}>
+                          {r.gross_score}
+                        </span>
+                        {i === 0 && <div style={{ fontSize: '0.65rem', color: 'var(--gray-400)', marginTop: 2 }}>RECORD</div>}
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                          {r.player_name}{r.nickname ? ` "${r.nickname}"` : ''}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--gray-400)', marginTop: 2 }}>
+                          {r.tournament_name} &middot; {r.year}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

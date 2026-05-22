@@ -25,7 +25,7 @@ router.get('/:id', (req, res) => {
     FROM scores s
     JOIN players p ON p.id = s.player_id
     WHERE s.tournament_id = ?
-    ORDER BY s.gross_score ASC
+    ORDER BY s.gross_score ASC NULLS LAST
   `).all(req.params.id);
 
   const awards = db.prepare(`
