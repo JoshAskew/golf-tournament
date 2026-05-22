@@ -51,6 +51,51 @@ export default function Home() {
           <div className="hero-title">The Buc-ee's Classic</div>
           <div className="hero-sub">Track scores, stats, and memories with the boys</div>
         </div>
+
+        {/* Decorative background golfer */}
+        <div className="hero-golfer" aria-hidden="true">
+          <svg viewBox="0 0 180 200" xmlns="http://www.w3.org/2000/svg" fill="none">
+            {/* Head */}
+            <circle cx="72" cy="28" r="13" fill="white"/>
+            {/* Cap */}
+            <path d="M60 21 Q72 11 88 18" stroke="white" strokeWidth="5" strokeLinecap="round"/>
+            {/* Body */}
+            <line x1="72" y1="41" x2="72" y2="105" stroke="white" strokeWidth="5" strokeLinecap="round"/>
+            {/* Left leg */}
+            <line x1="72" y1="105" x2="56" y2="160" stroke="white" strokeWidth="5" strokeLinecap="round"/>
+            {/* Right leg */}
+            <line x1="72" y1="105" x2="88" y2="160" stroke="white" strokeWidth="5" strokeLinecap="round"/>
+            {/* Left foot */}
+            <line x1="56" y1="160" x2="42" y2="164" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+            {/* Right foot */}
+            <line x1="88" y1="160" x2="102" y2="164" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+
+            {/* Swing arm group — pivot at shoulder (72, 56) */}
+            <g className="swing-arm">
+              {/* Left arm */}
+              <line x1="72" y1="56" x2="52" y2="78" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+              {/* Right arm */}
+              <line x1="72" y1="56" x2="92" y2="78" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+              {/* Club shaft */}
+              <line x1="92" y1="78" x2="116" y2="164" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+              {/* Club head */}
+              <line x1="108" y1="163" x2="126" y2="157" stroke="white" strokeWidth="6" strokeLinecap="round"/>
+            </g>
+
+            {/* Whoosh lines during downswing */}
+            <g className="whoosh" opacity="0">
+              <path d="M98 128 Q118 108 134 122" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M100 144 Q119 127 133 138" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            </g>
+
+            {/* Ball on tee — never moves */}
+            <line x1="140" y1="162" x2="140" y2="172" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+            <circle cx="140" cy="156" r="6" fill="white"/>
+
+            {/* "?" floats up after the miss */}
+            <text className="miss-q" x="82" y="10" fontSize="18" fill="white" fontFamily="sans-serif" fontWeight="bold" textAnchor="middle" opacity="0">?</text>
+          </svg>
+        </div>
       </div>
 
       {/* ── Quick nav cards ── */}
