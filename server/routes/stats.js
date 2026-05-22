@@ -5,18 +5,44 @@ const router = express.Router();
 
 // All-time records and hall of fame stats
 router.get('/', (req, res) => {
-  const mostWins = db.prepare(`
-    SELECT p.id, p.name, p.nickname, p.avatar_url,
-      COUNT(*) AS wins
+
+  // ── Individual wins (tournaments with no teams) ──
+  const indivWins = db.prepare(`
+    SELECT p.id, p.name, p.nickname, p.avatar_url, COUNT(*) AS wins
     FROM scores s
     JOIN players p ON p.id = s.player_id
-    WHERE s.gross_score = (
-      SELECT MIN(s2.gross_score) FROM scores s2 WHERE s2.tournament_id = s.tournament_id
-    )
+    WHERE s.gross_score IS NOT NULL
+      AND s.gross_score = (
+        SELECT MIN(s2.gross_score) FROM scores s2
+        WHERE s2.tournament_id = s.tournament_id AND s2.gross_score IS NOT NULL
+      )
+      AND NOT EXISTS (SELECT 1 FROM teams WHERE tournament_id = s.tournament_id)
     GROUP BY p.id
-    ORDER BY wins DESC
-    LIMIT 5
   `).all();
+
+  // ── Team wins — each member of the winning team gets a win ──
+  const teamWins = db.prepare(`
+    SELECT p.id, p.name, p.nickname, p.avatar_url, COUNT(*) AS wins
+    FROM team_members tm
+    JOIN players p ON p.id = tm.player_id
+    JOIN teams te ON te.id = tm.team_id
+    JOIN team_scores ts ON ts.team_id = te.id
+    WHERE ts.gross_score IS NOT NULL
+      AND ts.gross_score = (
+        SELECT MIN(ts2.gross_score) FROM team_scores ts2
+        JOIN teams te2 ON te2.id = ts2.team_id
+        WHERE te2.tournament_id = te.tournament_id AND ts2.gross_score IS NOT NULL
+      )
+    GROUP BY p.id
+  `).all();
+
+  // Merge win counts
+  const winsMap = {};
+  [...indivWins, ...teamWins].forEach(p => {
+    if (winsMap[p.id]) winsMap[p.id].wins += p.wins;
+    else winsMap[p.id] = { ...p };
+  });
+  const mostWins = Object.values(winsMap).sort((a, b) => b.wins - a.wins).slice(0, 5);
 
   const bestRounds = db.prepare(`
     SELECT s.gross_score, s.net_score, p.name AS player_name, p.nickname,
@@ -41,19 +67,51 @@ router.get('/', (req, res) => {
     LIMIT 10
   `).all();
 
-  const yearlyWinners = db.prepare(`
-    SELECT t.year, t.name AS tournament_name, t.course,
-      p.name AS winner_name, p.nickname,
+  // ── Yearly winners — handles both individual and team tournaments ──
+  const indivYearly = db.prepare(`
+    SELECT t.id AS tournament_id, t.year, t.name AS tournament_name, t.course, t.date,
+      p.id AS winner_id, p.name AS winner_name, p.nickname, p.avatar_url,
       MIN(s.gross_score) AS winning_score
     FROM tournaments t
-    JOIN scores s ON s.tournament_id = t.id
+    JOIN scores s ON s.tournament_id = t.id AND s.gross_score IS NOT NULL
     JOIN players p ON p.id = s.player_id
     WHERE s.gross_score = (
-      SELECT MIN(s2.gross_score) FROM scores s2 WHERE s2.tournament_id = t.id
+      SELECT MIN(s2.gross_score) FROM scores s2
+      WHERE s2.tournament_id = t.id AND s2.gross_score IS NOT NULL
+    )
+    AND NOT EXISTS (SELECT 1 FROM teams WHERE tournament_id = t.id)
+    GROUP BY t.id
+    ORDER BY t.year DESC
+  `).all().map(r => ({ ...r, type: 'individual' }));
+
+  const teamYearly = db.prepare(`
+    SELECT t.id AS tournament_id, t.year, t.name AS tournament_name, t.course, t.date,
+      te.id AS team_id, te.name AS team_name,
+      ts.gross_score AS winning_score
+    FROM tournaments t
+    JOIN teams te ON te.tournament_id = t.id
+    JOIN team_scores ts ON ts.team_id = te.id AND ts.gross_score IS NOT NULL
+    WHERE ts.gross_score = (
+      SELECT MIN(ts2.gross_score) FROM team_scores ts2
+      JOIN teams te2 ON te2.id = ts2.team_id
+      WHERE te2.tournament_id = t.id AND ts2.gross_score IS NOT NULL
     )
     GROUP BY t.id
     ORDER BY t.year DESC
-  `).all();
+  `).all().map(r => ({ ...r, type: 'team' }));
+
+  // Hydrate team members for team winners
+  const getMembersStmt = db.prepare(`
+    SELECT p.id, p.name, p.nickname, p.avatar_url
+    FROM team_members tm
+    JOIN players p ON p.id = tm.player_id
+    WHERE tm.team_id = ?
+    ORDER BY p.name
+  `);
+  teamYearly.forEach(tw => { tw.members = getMembersStmt.all(tw.team_id); });
+
+  const yearlyWinners = [...indivYearly, ...teamYearly]
+    .sort((a, b) => b.year - a.year || (b.date || '').localeCompare(a.date || ''));
 
   const allAwards = db.prepare(`
     SELECT a.award_name, COUNT(*) AS times_won, p.name AS player_name, p.nickname, p.id AS player_id

@@ -110,6 +110,44 @@ db.exec(`
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE SET NULL
   );
+
+  CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    location TEXT,
+    format TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'planning',
+    confirmed_date TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS event_dates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS event_date_votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_date_id INTEGER NOT NULL,
+    voter_name TEXT NOT NULL,
+    availability TEXT NOT NULL,
+    FOREIGN KEY (event_date_id) REFERENCES event_dates(id) ON DELETE CASCADE,
+    UNIQUE(event_date_id, voter_name)
+  );
+
+  CREATE TABLE IF NOT EXISTS event_rsvps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL,
+    player_name TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    UNIQUE(event_id, player_name)
+  );
 `);
 
 module.exports = db;

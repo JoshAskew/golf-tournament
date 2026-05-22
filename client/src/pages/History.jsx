@@ -21,29 +21,19 @@ export default function History() {
         </div>
       </div>
 
-      {/* Yearly champions */}
+      {/* ── Champions by Year ── */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <div className="card-header"><div className="card-title">Champions by Year</div></div>
+        <div className="card-header"><div className="card-title">🏆 Champions by Year</div></div>
         {stats.yearlyWinners.length === 0 ? (
-          <div className="empty-state" style={{ padding: 32 }}><div className="empty-state-text">No tournament results yet</div></div>
+          <div className="empty-state" style={{ padding: 40 }}>
+            <div className="empty-state-icon">🏆</div>
+            <div className="empty-state-text">No tournament results yet — enter some scores!</div>
+          </div>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Year</th><th>Tournament</th><th>Course</th><th>Champion</th><th>Score</th></tr>
-              </thead>
-              <tbody>
-                {stats.yearlyWinners.map(w => (
-                  <tr key={w.year}>
-                    <td><strong>{w.year}</strong></td>
-                    <td>{w.tournament_name}</td>
-                    <td>{w.course || '—'}</td>
-                    <td>🏆 <strong>{w.winner_name}</strong>{w.nickname ? ` "${w.nickname}"` : ''}</td>
-                    <td><strong style={{ color: 'var(--green-dark)' }}>{w.winning_score}</strong></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="card-body" style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {stats.yearlyWinners.map((w, i) => (
+              <ChampionRow key={`${w.tournament_id}-${i}`} winner={w} />
+            ))}
           </div>
         )}
       </div>
@@ -152,6 +142,98 @@ export default function History() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Champion row component ────────────────────────────────────────────────────
+function ChampionRow({ winner: w }) {
+  const isTeam = w.type === 'team';
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 16,
+      padding: '14px 16px',
+      borderRadius: 'var(--radius)',
+      background: 'var(--cream)',
+      border: '1px solid var(--gray-200)',
+      flexWrap: 'wrap',
+    }}>
+      {/* Year */}
+      <div style={{
+        minWidth: 52,
+        textAlign: 'center',
+        flexShrink: 0,
+      }}>
+        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--green-dark)', lineHeight: 1 }}>{w.year}</div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ width: 2, height: 40, background: 'var(--gold)', borderRadius: 2, flexShrink: 0 }} />
+
+      {/* Tournament info */}
+      <div style={{ flex: 1, minWidth: 140 }}>
+        <Link
+          to={`/tournaments/${w.tournament_id}`}
+          style={{ fontWeight: 700, color: 'var(--green-dark)', textDecoration: 'none', fontSize: '0.95rem' }}
+        >
+          {w.tournament_name}
+        </Link>
+        {w.course && (
+          <div style={{ fontSize: '0.78rem', color: 'var(--gray-400)', marginTop: 2 }}>{w.course}</div>
+        )}
+      </div>
+
+      {/* Winner */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '1.1rem' }}>🏆</span>
+        {isTeam ? (
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--green-dark)' }}>{w.team_name}</div>
+            {w.members?.length > 0 && (
+              <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                {w.members.map(m => (
+                  <Link key={m.id} to={`/players/${m.id}`} title={m.nickname || m.name}>
+                    <Avatar src={m.avatar_url} name={m.name} size="sm" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link to={`/players/${w.winner_id}`}>
+              <Avatar src={w.avatar_url} name={w.winner_name} size="sm" />
+            </Link>
+            <div>
+              <Link
+                to={`/players/${w.winner_id}`}
+                style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--green-dark)', textDecoration: 'none' }}
+              >
+                {w.winner_name}
+              </Link>
+              {w.nickname && (
+                <div style={{ fontSize: '0.75rem', color: 'var(--gray-400)', fontStyle: 'italic' }}>"{w.nickname}"</div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Score */}
+      <div style={{
+        background: 'var(--green-dark)',
+        color: 'white',
+        borderRadius: 8,
+        padding: '4px 12px',
+        fontWeight: 800,
+        fontSize: '1rem',
+        flexShrink: 0,
+      }}>
+        {w.winning_score}
+      </div>
     </div>
   );
 }

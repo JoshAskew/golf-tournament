@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar';
-import PlanningSection from '../components/PlanningSection';
+import EventsSection from '../components/EventsSection';
 
 const NAV_CARDS = [
   { to: '/tournaments', icon: '⛳', label: 'Tournaments', desc: 'Scores & leaderboards', color: 'var(--green-mid)' },
@@ -47,11 +47,9 @@ export default function Home() {
             onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
           />
           <span className="hero-logo-fallback" style={{ display: 'none' }}>⛳</span>
-          <div className="hero-text">
-            <div className="hero-eyebrow">Annual Golf Tournament</div>
-            <div className="hero-title">The Buc-ee's Classic</div>
-            <div className="hero-sub">Track scores, stats, and memories with the boys</div>
-          </div>
+          <div className="hero-eyebrow">Annual Golf Tournament</div>
+          <div className="hero-title">The Buc-ee's Classic</div>
+          <div className="hero-sub">Track scores, stats, and memories with the boys</div>
         </div>
       </div>
 
@@ -184,8 +182,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* ── Planning / polls ── */}
-      <PlanningSection />
+      {/* ── Upcoming Events ── */}
+      <EventsSection />
 
       {/* ── Champions by year ── */}
       {stats?.yearlyWinners?.length > 0 && (
