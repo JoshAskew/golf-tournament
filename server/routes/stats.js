@@ -6,43 +6,16 @@ const router = express.Router();
 // All-time records and hall of fame stats
 router.get('/', (req, res) => {
 
-  // ── Individual wins (tournaments with no teams) ──
-  const indivWins = db.prepare(`
+  // ── Most wins — counted by Tournament Champion awards ──
+  const mostWins = db.prepare(`
     SELECT p.id, p.name, p.nickname, p.avatar_url, COUNT(*) AS wins
-    FROM scores s
-    JOIN players p ON p.id = s.player_id
-    WHERE s.gross_score IS NOT NULL
-      AND s.gross_score = (
-        SELECT MIN(s2.gross_score) FROM scores s2
-        WHERE s2.tournament_id = s.tournament_id AND s2.gross_score IS NOT NULL
-      )
-      AND NOT EXISTS (SELECT 1 FROM teams WHERE tournament_id = s.tournament_id)
+    FROM awards a
+    JOIN players p ON p.id = a.player_id
+    WHERE a.award_name = 'Tournament Champion'
     GROUP BY p.id
+    ORDER BY wins DESC
+    LIMIT 5
   `).all();
-
-  // ── Team wins — each member of the winning team gets a win ──
-  const teamWins = db.prepare(`
-    SELECT p.id, p.name, p.nickname, p.avatar_url, COUNT(*) AS wins
-    FROM team_members tm
-    JOIN players p ON p.id = tm.player_id
-    JOIN teams te ON te.id = tm.team_id
-    JOIN team_scores ts ON ts.team_id = te.id
-    WHERE ts.gross_score IS NOT NULL
-      AND ts.gross_score = (
-        SELECT MIN(ts2.gross_score) FROM team_scores ts2
-        JOIN teams te2 ON te2.id = ts2.team_id
-        WHERE te2.tournament_id = te.tournament_id AND ts2.gross_score IS NOT NULL
-      )
-    GROUP BY p.id
-  `).all();
-
-  // Merge win counts
-  const winsMap = {};
-  [...indivWins, ...teamWins].forEach(p => {
-    if (winsMap[p.id]) winsMap[p.id].wins += p.wins;
-    else winsMap[p.id] = { ...p };
-  });
-  const mostWins = Object.values(winsMap).sort((a, b) => b.wins - a.wins).slice(0, 5);
 
   const bestRounds = db.prepare(`
     SELECT s.gross_score, s.net_score, p.name AS player_name, p.nickname,
@@ -57,11 +30,21 @@ router.get('/', (req, res) => {
 
   const mostTournaments = db.prepare(`
     SELECT p.id, p.name, p.nickname, p.avatar_url,
-      COUNT(DISTINCT s.tournament_id) AS count,
+      (
+        SELECT COUNT(DISTINCT tournament_id) FROM (
+          SELECT s2.tournament_id FROM scores s2 WHERE s2.player_id = p.id
+          UNION
+          SELECT te2.tournament_id FROM team_members tm2
+          JOIN teams te2 ON te2.id = tm2.team_id
+          WHERE tm2.player_id = p.id
+        )
+      ) AS count,
       MIN(s.gross_score) AS best_score,
       ROUND(AVG(s.gross_score), 1) AS avg_score
-    FROM scores s
-    JOIN players p ON p.id = s.player_id
+    FROM players p
+    LEFT JOIN scores s ON s.player_id = p.id
+    WHERE EXISTS (SELECT 1 FROM scores s3 WHERE s3.player_id = p.id)
+       OR EXISTS (SELECT 1 FROM team_members tm3 WHERE tm3.player_id = p.id)
     GROUP BY p.id
     ORDER BY count DESC
     LIMIT 10
