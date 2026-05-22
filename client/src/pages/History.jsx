@@ -45,7 +45,7 @@ export default function History() {
           {stats.mostWins.length === 0 ? (
             <div className="empty-state" style={{ padding: 32 }}><div className="empty-state-text">No wins recorded</div></div>
           ) : (
-            <div className="table-wrap">
+            <div className="table-wrap" style={{ maxHeight: 320, overflowY: 'auto' }}>
               <table>
                 <thead><tr><th>#</th><th>Player</th><th>Wins</th></tr></thead>
                 <tbody>

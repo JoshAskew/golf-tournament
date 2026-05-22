@@ -107,7 +107,7 @@ export default function Home() {
             {latest && <Link to={`/tournaments/${latest.id}`} className="btn btn-outline btn-sm">View →</Link>}
           </div>
           {latest ? (
-            latest.players_count > 0 ? (
+            (latest.players_count > 0 || latest.teams_count > 0) ? (
               <LatestLeaderboard tournamentId={latest.id} />
             ) : (
               <div className="empty-state" style={{ padding: 32 }}>
@@ -149,7 +149,7 @@ export default function Home() {
               <Link to="/history" className="btn btn-outline btn-sm">Full History →</Link>
             </div>
             {stats?.mostWins?.length > 0 ? (
-              <div className="table-wrap">
+              <div className="table-wrap" style={{ maxHeight: 280, overflowY: 'auto' }}>
                 <table>
                   <thead><tr><th>Player</th><th>Wins</th></tr></thead>
                   <tbody>
@@ -215,7 +215,7 @@ export default function Home() {
               <div className="card-header">
                 <div className="card-title">All-Time Wins</div>
               </div>
-              <div className="table-wrap">
+              <div className="table-wrap" style={{ maxHeight: 280, overflowY: 'auto' }}>
                 <table>
                   <thead><tr><th>Player</th><th>Wins</th></tr></thead>
                   <tbody>
@@ -249,12 +249,80 @@ export default function Home() {
 
 function LatestLeaderboard({ tournamentId }) {
   const [data, setData] = useState(null);
+  const [teams, setTeams] = useState(null);
 
   useEffect(() => {
-    fetch(`/api/tournaments/${tournamentId}`).then(r => r.json()).then(setData);
+    Promise.all([
+      fetch(`/api/tournaments/${tournamentId}`).then(r => r.json()),
+      fetch(`/api/teams?tournament_id=${tournamentId}`).then(r => r.json()),
+    ]).then(([d, t]) => { setData(d); setTeams(t); });
   }, [tournamentId]);
 
-  if (!data) return <div className="loading" style={{ padding: 24 }}>Loading...</div>;
+  if (!data || !teams) return <div className="loading" style={{ padding: 24 }}>Loading...</div>;
+
+  // Team leaderboard
+  if (teams.length > 0) {
+    const sorted = [...teams]
+      .sort((a, b) => {
+        if (a.gross_score == null && b.gross_score == null) return 0;
+        if (a.gross_score == null) return 1;
+        if (b.gross_score == null) return -1;
+        return a.gross_score - b.gross_score;
+      })
+      .filter(t => t.gross_score != null)
+      .slice(0, 6);
+
+    if (sorted.length === 0) {
+      return (
+        <div className="empty-state" style={{ padding: 32 }}>
+          <div className="empty-state-icon">📋</div>
+          <div className="empty-state-text">No scores entered yet</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Team</th><th>Gross</th><th>Net</th></tr>
+          </thead>
+          <tbody>
+            {sorted.map((team, i) => (
+              <tr key={team.id}>
+                <td>
+                  <span className={i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''}>
+                    {i === 0 ? '🏆' : i + 1}
+                  </span>
+                </td>
+                <td>
+                  <div style={{ fontWeight: 700, color: 'var(--green-dark)' }}>{team.name}</div>
+                  <div style={{ display: 'flex', gap: 4, marginTop: 3 }}>
+                    {team.members.map(m => (
+                      <Avatar key={m.id} src={m.avatar_url} name={m.name} size="sm" />
+                    ))}
+                  </div>
+                </td>
+                <td><strong>{team.gross_score}</strong></td>
+                <td>{team.net_score ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  // Individual leaderboard
+  const ranked = data.leaderboard.filter(s => s.gross_score != null).slice(0, 6);
+  if (ranked.length === 0) {
+    return (
+      <div className="empty-state" style={{ padding: 32 }}>
+        <div className="empty-state-icon">📋</div>
+        <div className="empty-state-text">No scores entered yet</div>
+      </div>
+    );
+  }
 
   return (
     <div className="table-wrap">
@@ -263,7 +331,7 @@ function LatestLeaderboard({ tournamentId }) {
           <tr><th>#</th><th>Player</th><th>Gross</th><th>Net</th></tr>
         </thead>
         <tbody>
-          {data.leaderboard.slice(0, 6).map((s, i) => (
+          {ranked.map((s, i) => (
             <tr key={s.id}>
               <td>
                 <span className={i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''}>

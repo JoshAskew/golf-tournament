@@ -7,6 +7,7 @@ router.get('/', (req, res) => {
   const tournaments = db.prepare(`
     SELECT t.*,
       COUNT(DISTINCT s.player_id) AS players_count,
+      (SELECT COUNT(*) FROM teams WHERE tournament_id = t.id) AS teams_count,
       MIN(s.gross_score) AS low_score
     FROM tournaments t
     LEFT JOIN scores s ON s.tournament_id = t.id

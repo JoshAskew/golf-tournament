@@ -14,7 +14,6 @@ router.get('/', (req, res) => {
     WHERE a.award_name = 'Tournament Champion'
     GROUP BY p.id
     ORDER BY wins DESC
-    LIMIT 5
   `).all();
 
   const bestRounds = db.prepare(`
